@@ -197,7 +197,7 @@
 
     <!-- Modal de Histórico de Apresentações -->
     <div id="historyModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[80vh]">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-3xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
             <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-800/50">
                 <h3 class="font-bold text-white text-lg flex items-center gap-2">
                     <i class="fa-solid fa-clock-rotate-left text-cyan-400"></i> Histórico de Análises Salvas
@@ -208,7 +208,7 @@
                 <!-- Histórico dinâmico inserido por JS -->
             </div>
             <div class="p-4 border-t border-slate-700 bg-slate-900/50 flex justify-between items-center text-xs text-slate-400">
-                <span>Os dados ficam armazenados de forma segura no seu navegador.</span>
+                <span>Os dados completos das análises estão armazenados no seu navegador.</span>
                 <button id="btnClearHistory" class="text-rose-400 hover:text-rose-300 font-semibold"><i class="fa-solid fa-trash mr-1"></i> Limpar Histórico</button>
             </div>
         </div>
@@ -223,6 +223,68 @@
         let chartSevInstance = null;
         let chartTypeInstance = null;
         let chartTurbInstance = null;
+
+        // INDEXEDDB SETUP FOR STORING LARGE DATASETS
+        const DB_NAME = "ArthwindDB";
+        const STORE_NAME = "AnalysesStore";
+
+        function openDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, 1);
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains(STORE_NAME)) {
+                        db.createObjectStore(STORE_NAME, { keyPath: "id" });
+                    }
+                };
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        async function saveAnalysisToDB(analysisData) {
+            const db = await openDB();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(STORE_NAME, "readwrite");
+                const store = tx.objectStore(STORE_NAME);
+                store.put(analysisData);
+                tx.oncomplete = () => resolve();
+                tx.onerror = () => reject(tx.error);
+            });
+        }
+
+        async function getAnalysisFromDB(id) {
+            const db = await openDB();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(STORE_NAME, "readonly");
+                const store = tx.objectStore(STORE_NAME);
+                const request = store.get(id);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        async function deleteAnalysisFromDB(id) {
+            const db = await openDB();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(STORE_NAME, "readwrite");
+                const store = tx.objectStore(STORE_NAME);
+                store.delete(id);
+                tx.oncomplete = () => resolve();
+                tx.onerror = () => reject(tx.error);
+            });
+        }
+
+        async function clearAllDB() {
+            const db = await openDB();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(STORE_NAME, "readwrite");
+                const store = tx.objectStore(STORE_NAME);
+                store.clear();
+                tx.oncomplete = () => resolve();
+                tx.onerror = () => reject(tx.error);
+            });
+        }
 
         document.getElementById('excelFile').addEventListener('change', handleFileUpload);
         document.getElementById('filterType').addEventListener('change', applyFilters);
@@ -243,7 +305,7 @@
             if (!file) return;
 
             const reader = new FileReader();
-            reader.onload = function(evt) {
+            reader.onload = async function(evt) {
                 const data = new Uint8Array(evt.target.result);
                 const workbook = XLSX.read(data, { type: 'array' });
                 const firstSheet = workbook.SheetNames[0];
@@ -255,8 +317,8 @@
                 document.getElementById('uploadPrompt').classList.add('hidden');
                 document.getElementById('dashboardContent').classList.remove('hidden');
 
-                // Salvar no Histórico
-                saveAnalysisToHistory(file.name, rawData.length);
+                // Salvar no Histórico com dataset completo
+                await saveAnalysisRecord(file.name, rawData);
 
                 populateFilterDropdowns();
                 applyFilters();
@@ -264,22 +326,48 @@
             reader.readAsArrayBuffer(file);
         }
 
-        function saveAnalysisToHistory(fileName, totalRows) {
-            let history = JSON.parse(localStorage.getItem('arthwind_history') || '[]');
-            const parkName = rawData[0]?.['Wind Park'] || 'Parque Desconhecido';
-            const turbineSN = rawData[0]?.['WTG SN'] || 'WTG N/A';
+        async function saveAnalysisRecord(fileName, dataset) {
+            const parkName = dataset[0]?.['Wind Park'] || 'Parque Eólico';
+            const turbineSN = dataset[0]?.['WTG SN'] || 'WTG N/A';
+            const analysisId = Date.now();
 
-            const newEntry = {
-                id: Date.now(),
+            const analysisRecord = {
+                id: analysisId,
                 date: new Date().toLocaleString('pt-BR'),
                 fileName: fileName,
                 park: parkName,
                 turbine: turbineSN,
-                totalRecords: totalRows
+                totalRecords: dataset.length,
+                dataset: dataset
             };
 
-            history.unshift(newEntry);
-            localStorage.setItem('arthwind_history', JSON.stringify(history.slice(0, 20))); // Guarda até 20 registros
+            await saveAnalysisToDB(analysisRecord);
+        }
+
+        async function openAnalysisFromHistory(id) {
+            const record = await getAnalysisFromDB(id);
+            if (!record || !record.dataset) {
+                alert("Erro ao carregar dados desta análise do histórico.");
+                return;
+            }
+
+            rawData = record.dataset;
+            selectedDefectIds.clear();
+
+            document.getElementById('uploadPrompt').classList.add('hidden');
+            document.getElementById('dashboardContent').classList.remove('hidden');
+
+            populateFilterDropdowns();
+            applyFilters();
+            closeHistoryModal();
+        }
+
+        async function deleteItemFromHistory(id, event) {
+            event.stopPropagation();
+            if (confirm("Deseja remover esta análise do histórico?")) {
+                await deleteAnalysisFromDB(id);
+                renderHistoryList();
+            }
         }
 
         function openHistoryModal() {
@@ -291,32 +379,51 @@
             document.getElementById('historyModal').classList.add('hidden');
         }
 
-        function clearHistory() {
-            if (confirm("Deseja realmente apagar o histórico de análises?")) {
-                localStorage.removeItem('arthwind_history');
+        async function clearHistory() {
+            if (confirm("Deseja realmente apagar todo o histórico de análises salvas?")) {
+                await clearAllDB();
                 renderHistoryList();
             }
         }
 
-        function renderHistoryList() {
+        async function renderHistoryList() {
             const list = document.getElementById('historyList');
-            const history = JSON.parse(localStorage.getItem('arthwind_history') || '[]');
+            const db = await openDB();
+            
+            const tx = db.transaction(STORE_NAME, "readonly");
+            const store = tx.objectStore(STORE_NAME);
+            const request = store.getAll();
 
-            if (history.length === 0) {
-                list.innerHTML = `<p class="text-center text-slate-500 py-8">Nenhum histórico de análise salvo ainda.</p>`;
-                return;
-            }
+            request.onsuccess = () => {
+                const history = request.result.sort((a,b) => b.id - a.id);
 
-            list.innerHTML = history.map(item => `
-                <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-3 flex justify-between items-center">
-                    <div>
-                        <h4 class="font-bold text-white text-sm">${item.park} - ${item.turbine}</h4>
-                        <p class="text-xs text-slate-400 mt-0.5"><i class="fa-solid fa-file-excel text-emerald-400 mr-1"></i> ${item.fileName} | ${item.totalRecords} Apontamentos</p>
-                        <span class="text-[10px] text-slate-500">${item.date}</span>
+                if (history.length === 0) {
+                    list.innerHTML = `<p class="text-center text-slate-500 py-8">Nenhum histórico de análise salvo ainda.</p>`;
+                    return;
+                }
+
+                list.innerHTML = history.map(item => `
+                    <div class="bg-slate-900 border border-slate-700/80 hover:border-cyan-500/50 rounded-xl p-3 flex justify-between items-center transition-all">
+                        <div class="cursor-pointer flex-grow" onclick="openAnalysisFromHistory(${item.id})">
+                            <h4 class="font-bold text-white text-sm flex items-center gap-2">
+                                ${item.park} - WTG ${item.turbine}
+                                <span class="bg-cyan-500/10 text-cyan-400 text-[10px] px-2 py-0.5 rounded border border-cyan-500/20 font-normal">Clique para Abrir</span>
+                            </h4>
+                            <p class="text-xs text-slate-400 mt-1"><i class="fa-solid fa-file-excel text-emerald-400 mr-1"></i> ${item.fileName} | <span class="text-slate-300 font-semibold">${item.totalRecords} Apontamentos</span></p>
+                            <span class="text-[10px] text-slate-500">${item.date}</span>
+                        </div>
+
+                        <div class="flex items-center gap-2 ml-4">
+                            <button onclick="openAnalysisFromHistory(${item.id})" class="bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-xs px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 shadow">
+                                <i class="fa-solid fa-folder-open"></i> Abrir
+                            </button>
+                            <button onclick="deleteItemFromHistory(${item.id}, event)" class="bg-slate-800 hover:bg-rose-600/20 text-slate-400 hover:text-rose-400 text-xs p-2 rounded-lg transition-all" title="Excluir do Histórico">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
                     </div>
-                    <span class="bg-cyan-500/10 text-cyan-400 text-xs px-2.5 py-1 rounded-full border border-cyan-500/20">Salvo</span>
-                </div>
-            `).join('');
+                `).join('');
+            };
         }
 
         function populateFilterDropdowns() {
@@ -539,16 +646,12 @@
             const selectedRows = rawData.filter(r => selectedDefectIds.has(r['Defect ID']));
             const sampleRow = selectedRows[0] || {};
 
-            // ==========================================
             // SLIDE DE CAPA CORPORATIVO
-            // ==========================================
             const coverSlide = pptx.addSlide();
             coverSlide.background = { color: '0F172A' };
 
-            // Faixa Decorativa Superior
             coverSlide.addShape(pptx.shapes.RECTANGLE, { x: 0, y: 0, w: '100%', h: 0.2, fill: { color: '00F2FE' } });
 
-            // Título Principal da Capa
             coverSlide.addText("ARTHWIND TECHNOLOGIES", {
                 x: 0.8, y: 1.2, fontSize: 16, bold: true, color: '38BDF8', tracking: 2
             });
@@ -561,7 +664,6 @@
                 x: 0.8, y: 2.4, fontSize: 18, color: '94A3B8'
             });
 
-            // Card com Informações do Relatório
             coverSlide.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
                 x: 0.8, y: 3.2, w: 11.5, h: 2.2, fill: { color: '1E293B' }, line: { color: '334155', width: 1 }
             });
@@ -575,16 +677,13 @@
             const maxSev = Math.max(...selectedRows.map(r => r['Severity'] || 1));
             coverSlide.addText(`Severidade Máxima: SEV ${maxSev}`, { x: 7.0, y: 4.0, fontSize: 13, bold: true, color: maxSev >= 4 ? 'EF4444' : 'EAB308' });
 
-            // ==========================================
-            // SLIDES INDIVIDUAIS DOS DANOS
-            // ==========================================
+            // SLIDES INDIVIDUAIS
             for (let index = 0; index < selectedRows.length; index++) {
                 const row = selectedRows[index];
                 const slide = pptx.addSlide();
                 
                 slide.background = { color: '0F172A' };
 
-                // Banner Superior
                 slide.addShape(pptx.shapes.RECTANGLE, { x: 0, y: 0, w: '100%', h: 0.8, fill: { color: '1E293B' } });
                 
                 slide.addText(`Relatório de Inspeção - ${row['Wind Park'] || 'Parque Eólico'}`, {
@@ -594,7 +693,6 @@
                     x: 0.5, y: 0.45, fontSize: 12, color: '94A3B8'
                 });
 
-                // Baixar imagem Base64
                 let base64Img = null;
                 if (row['Image URL']) {
                     base64Img = await getBase64ImageFromUrl(row['Image URL']);
@@ -617,7 +715,6 @@
                 const sevColors = { 1: '22C55E', 2: '06B6D4', 3: 'EAB308', 4: 'F97316', 5: 'EF4444' };
                 const sevColor = sevColors[row['Severity']] || '64748B';
 
-                // Painel da Direita
                 slide.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
                     x: 6.3, y: 1.1, w: 6.5, h: 4.2, fill: { color: '1E293B' }, line: { color: '334155', width: 1 }
                 });
@@ -650,7 +747,6 @@
                 });
             }
 
-            // Baixar apresentação PPTX
             await pptx.writeFile({ fileName: `Apresentacao_Inspecoes_Arthwind.pptx` });
 
             btn.innerHTML = originalText;
