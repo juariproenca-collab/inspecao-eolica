@@ -39,13 +39,17 @@
             </div>
 
             <div class="flex items-center gap-3">
+                <button id="btnOpenHistory" class="bg-slate-700 hover:bg-slate-600 text-white font-semibold text-sm px-3 py-2 rounded-xl transition-all flex items-center gap-2 shadow-md">
+                    <i class="fa-solid fa-clock-rotate-left text-cyan-400"></i> Histórico
+                </button>
+
                 <label for="excelFile" class="cursor-pointer bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-sm px-4 py-2 rounded-xl transition-all flex items-center gap-2 shadow-md">
-                    <i class="fa-solid fa-file-excel"></i> Carregar Excel (.xlsx)
+                    <i class="fa-solid fa-file-excel"></i> Atualizar/Carregar Excel
                 </label>
                 <input type="file" id="excelFile" accept=".xlsx, .xls" class="hidden">
                 
                 <button id="btnGeneratePptx" disabled class="bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed text-white font-semibold text-sm px-4 py-2 rounded-xl transition-all flex items-center gap-2 shadow-md">
-                    <i class="fa-solid fa-file-powerpoint"></i> Gerar PowerPoint (<span id="selectedCount">0</span>)
+                    <i class="fa-solid fa-file-powerpoint"></i> Gerar PPTX (<span id="selectedCount">0</span>)
                 </button>
             </div>
         </div>
@@ -58,7 +62,7 @@
         <div id="uploadPrompt" class="bg-slate-800/80 border-2 border-dashed border-slate-600 rounded-2xl p-16 text-center flex flex-col items-center justify-center gap-4 my-auto">
             <i class="fa-solid fa-cloud-arrow-up text-6xl text-cyan-400"></i>
             <h2 class="text-2xl font-bold text-white">Carregue a Planilha de Inspeção em Excel</h2>
-            <p class="text-slate-400 max-w-md">Selecione o arquivo com as inspeções para carregar o dashboard dinâmico com gráficos e exportador de slides com foto.</p>
+            <p class="text-slate-400 max-w-md">Selecione o arquivo com as inspeções para carregar o dashboard dinâmico, consultar o histórico ou gerar slides com foto e capa corporativa.</p>
         </div>
 
         <!-- Dashboard Geral (Charts + KPIs) -->
@@ -109,7 +113,6 @@
 
             <!-- Area dos Gráficos (Dashboard Visual) -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Gráfico Distribuição por Severidade -->
                 <div class="bg-slate-800 border border-slate-700/80 rounded-2xl p-4 flex flex-col justify-between">
                     <h4 class="text-sm font-bold text-slate-300 flex items-center gap-2 mb-2">
                         <i class="fa-solid fa-chart-column text-cyan-400"></i> Distribuição de Severidade
@@ -119,7 +122,6 @@
                     </div>
                 </div>
 
-                <!-- Gráfico Tipos de Defeito -->
                 <div class="bg-slate-800 border border-slate-700/80 rounded-2xl p-4 flex flex-col justify-between">
                     <h4 class="text-sm font-bold text-slate-300 flex items-center gap-2 mb-2">
                         <i class="fa-solid fa-chart-pie text-emerald-400"></i> Tipos de Defeito
@@ -129,7 +131,6 @@
                     </div>
                 </div>
 
-                <!-- Gráfico Turbinas Mais Afetadas -->
                 <div class="bg-slate-800 border border-slate-700/80 rounded-2xl p-4 flex flex-col justify-between">
                     <h4 class="text-sm font-bold text-slate-300 flex items-center gap-2 mb-2">
                         <i class="fa-solid fa-chart-bar text-amber-400"></i> Turbinas Mais Afetadas
@@ -162,7 +163,6 @@
 
                 <!-- Controles dos Filtros -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 border-t border-slate-700/60">
-                    <!-- Tipo de Dano -->
                     <div>
                         <label class="block text-xs font-semibold text-slate-400 mb-1">Tipo de Dano / Defeito:</label>
                         <select id="filterType" class="bg-slate-900 border border-slate-700 text-white text-xs rounded-xl p-2.5 w-full focus:ring-cyan-500 focus:border-cyan-500">
@@ -170,19 +170,17 @@
                         </select>
                     </div>
 
-                    <!-- Múltipla Severidade (Checkboxes) -->
                     <div>
                         <label class="block text-xs font-semibold text-slate-400 mb-1">Graus de Severidade (Escolha 1 ou mais):</label>
                         <div class="flex items-center gap-2 bg-slate-900 border border-slate-700 rounded-xl p-2">
-                            <label class="flex items-center gap-1 text-xs cursor-pointer"><input type="checkbox" class="sev-checkbox" value="1" checked class="rounded"> <span class="text-emerald-400 font-bold">1</span></label>
-                            <label class="flex items-center gap-1 text-xs cursor-pointer"><input type="checkbox" class="sev-checkbox" value="2" checked class="rounded"> <span class="text-cyan-400 font-bold">2</span></label>
-                            <label class="flex items-center gap-1 text-xs cursor-pointer"><input type="checkbox" class="sev-checkbox" value="3" checked class="rounded"> <span class="text-amber-400 font-bold">3</span></label>
-                            <label class="flex items-center gap-1 text-xs cursor-pointer"><input type="checkbox" class="sev-checkbox" value="4" checked class="rounded"> <span class="text-orange-400 font-bold">4</span></label>
-                            <label class="flex items-center gap-1 text-xs cursor-pointer"><input type="checkbox" class="sev-checkbox" value="5" checked class="rounded"> <span class="text-rose-500 font-bold">5</span></label>
+                            <label class="flex items-center gap-1 text-xs cursor-pointer"><input type="checkbox" class="sev-checkbox" value="1" checked> <span class="text-emerald-400 font-bold">1</span></label>
+                            <label class="flex items-center gap-1 text-xs cursor-pointer"><input type="checkbox" class="sev-checkbox" value="2" checked> <span class="text-cyan-400 font-bold">2</span></label>
+                            <label class="flex items-center gap-1 text-xs cursor-pointer"><input type="checkbox" class="sev-checkbox" value="3" checked> <span class="text-amber-400 font-bold">3</span></label>
+                            <label class="flex items-center gap-1 text-xs cursor-pointer"><input type="checkbox" class="sev-checkbox" value="4" checked> <span class="text-orange-400 font-bold">4</span></label>
+                            <label class="flex items-center gap-1 text-xs cursor-pointer"><input type="checkbox" class="sev-checkbox" value="5" checked> <span class="text-rose-500 font-bold">5</span></label>
                         </div>
                     </div>
 
-                    <!-- Turbina -->
                     <div>
                         <label class="block text-xs font-semibold text-slate-400 mb-1">Turbina (WTG):</label>
                         <select id="filterTurbine" class="bg-slate-900 border border-slate-700 text-white text-xs rounded-xl p-2.5 w-full focus:ring-cyan-500 focus:border-cyan-500">
@@ -193,11 +191,28 @@
             </div>
 
             <!-- Feed de Cards dos Danos -->
-            <div id="cardsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- Cards renderizados via JS -->
-            </div>
+            <div id="cardsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
         </div>
     </main>
+
+    <!-- Modal de Histórico de Apresentações -->
+    <div id="historyModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[80vh]">
+            <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-800/50">
+                <h3 class="font-bold text-white text-lg flex items-center gap-2">
+                    <i class="fa-solid fa-clock-rotate-left text-cyan-400"></i> Histórico de Análises Salvas
+                </h3>
+                <button id="btnCloseHistory" class="text-slate-400 hover:text-white text-lg px-2"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-4 overflow-y-auto flex-grow flex flex-col gap-3" id="historyList">
+                <!-- Histórico dinâmico inserido por JS -->
+            </div>
+            <div class="p-4 border-t border-slate-700 bg-slate-900/50 flex justify-between items-center text-xs text-slate-400">
+                <span>Os dados ficam armazenados de forma segura no seu navegador.</span>
+                <button id="btnClearHistory" class="text-rose-400 hover:text-rose-300 font-semibold"><i class="fa-solid fa-trash mr-1"></i> Limpar Histórico</button>
+            </div>
+        </div>
+    </div>
 
     <!-- JavaScript Application Code -->
     <script>
@@ -218,6 +233,11 @@
         document.getElementById('btnUnselectAll').addEventListener('click', unselectAll);
         document.getElementById('btnGeneratePptx').addEventListener('click', generatePowerPoint);
 
+        // Modal Histórico
+        document.getElementById('btnOpenHistory').addEventListener('click', openHistoryModal);
+        document.getElementById('btnCloseHistory').addEventListener('click', closeHistoryModal);
+        document.getElementById('btnClearHistory').addEventListener('click', clearHistory);
+
         function handleFileUpload(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -235,10 +255,68 @@
                 document.getElementById('uploadPrompt').classList.add('hidden');
                 document.getElementById('dashboardContent').classList.remove('hidden');
 
+                // Salvar no Histórico
+                saveAnalysisToHistory(file.name, rawData.length);
+
                 populateFilterDropdowns();
                 applyFilters();
             };
             reader.readAsArrayBuffer(file);
+        }
+
+        function saveAnalysisToHistory(fileName, totalRows) {
+            let history = JSON.parse(localStorage.getItem('arthwind_history') || '[]');
+            const parkName = rawData[0]?.['Wind Park'] || 'Parque Desconhecido';
+            const turbineSN = rawData[0]?.['WTG SN'] || 'WTG N/A';
+
+            const newEntry = {
+                id: Date.now(),
+                date: new Date().toLocaleString('pt-BR'),
+                fileName: fileName,
+                park: parkName,
+                turbine: turbineSN,
+                totalRecords: totalRows
+            };
+
+            history.unshift(newEntry);
+            localStorage.setItem('arthwind_history', JSON.stringify(history.slice(0, 20))); // Guarda até 20 registros
+        }
+
+        function openHistoryModal() {
+            renderHistoryList();
+            document.getElementById('historyModal').classList.remove('hidden');
+        }
+
+        function closeHistoryModal() {
+            document.getElementById('historyModal').classList.add('hidden');
+        }
+
+        function clearHistory() {
+            if (confirm("Deseja realmente apagar o histórico de análises?")) {
+                localStorage.removeItem('arthwind_history');
+                renderHistoryList();
+            }
+        }
+
+        function renderHistoryList() {
+            const list = document.getElementById('historyList');
+            const history = JSON.parse(localStorage.getItem('arthwind_history') || '[]');
+
+            if (history.length === 0) {
+                list.innerHTML = `<p class="text-center text-slate-500 py-8">Nenhum histórico de análise salvo ainda.</p>`;
+                return;
+            }
+
+            list.innerHTML = history.map(item => `
+                <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-3 flex justify-between items-center">
+                    <div>
+                        <h4 class="font-bold text-white text-sm">${item.park} - ${item.turbine}</h4>
+                        <p class="text-xs text-slate-400 mt-0.5"><i class="fa-solid fa-file-excel text-emerald-400 mr-1"></i> ${item.fileName} | ${item.totalRecords} Apontamentos</p>
+                        <span class="text-[10px] text-slate-500">${item.date}</span>
+                    </div>
+                    <span class="bg-cyan-500/10 text-cyan-400 text-xs px-2.5 py-1 rounded-full border border-cyan-500/20">Salvo</span>
+                </div>
+            `).join('');
         }
 
         function populateFilterDropdowns() {
@@ -281,7 +359,6 @@
         }
 
         function updateKPIsAndCharts() {
-            // KPIs
             document.getElementById('kpiTotal').innerText = filteredData.length;
             const uniqueWTG = new Set(filteredData.map(r => r['WTG SN'])).size;
             document.getElementById('kpiTurbines').innerText = uniqueWTG;
@@ -292,12 +369,10 @@
             const uniqueTypes = new Set(filteredData.map(r => r['Type'])).size;
             document.getElementById('kpiTypes').innerText = uniqueTypes;
 
-            // Render Charts
             renderCharts();
         }
 
         function renderCharts() {
-            // 1. Chart Severidades
             const sevCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
             filteredData.forEach(r => { if(r['Severity'] in sevCounts) sevCounts[r['Severity']]++; });
 
@@ -315,7 +390,6 @@
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { color: '#94a3b8' } }, x: { ticks: { color: '#94a3b8' } } } }
             });
 
-            // 2. Chart Tipos
             const typeCounts = {};
             filteredData.forEach(r => {
                 const t = r['Type'] || 'Outros';
@@ -335,7 +409,6 @@
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', boxWidth: 10, font: { size: 10 } } } } }
             });
 
-            // 3. Chart Turbinas
             const turbCounts = {};
             filteredData.forEach(r => {
                 const tb = r['WTG SN'] || 'N/A';
@@ -464,18 +537,56 @@
             pptx.layout = 'LAYOUT_16x9';
 
             const selectedRows = rawData.filter(r => selectedDefectIds.has(r['Defect ID']));
+            const sampleRow = selectedRows[0] || {};
 
+            // ==========================================
+            // SLIDE DE CAPA CORPORATIVO
+            // ==========================================
+            const coverSlide = pptx.addSlide();
+            coverSlide.background = { color: '0F172A' };
+
+            // Faixa Decorativa Superior
+            coverSlide.addShape(pptx.shapes.RECTANGLE, { x: 0, y: 0, w: '100%', h: 0.2, fill: { color: '00F2FE' } });
+
+            // Título Principal da Capa
+            coverSlide.addText("ARTHWIND TECHNOLOGIES", {
+                x: 0.8, y: 1.2, fontSize: 16, bold: true, color: '38BDF8', tracking: 2
+            });
+
+            coverSlide.addText("Relatório Executivo de Inspeção", {
+                x: 0.8, y: 1.8, fontSize: 28, bold: true, color: 'FFFFFF'
+            });
+
+            coverSlide.addText(`Parque Eólico: ${sampleRow['Wind Park'] || 'VENTIKA I'}`, {
+                x: 0.8, y: 2.4, fontSize: 18, color: '94A3B8'
+            });
+
+            // Card com Informações do Relatório
+            coverSlide.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
+                x: 0.8, y: 3.2, w: 11.5, h: 2.2, fill: { color: '1E293B' }, line: { color: '334155', width: 1 }
+            });
+
+            coverSlide.addText(`Cliente: ${sampleRow['Customer'] || 'Sempra Infraestructura'}`, { x: 1.2, y: 3.5, fontSize: 12, color: 'CBD5E1' });
+            coverSlide.addText(`Turbina (WTG): ${sampleRow['WTG SN'] || 'A5.7'} (${sampleRow['WTG Model'] || 'AW3000'})`, { x: 1.2, y: 3.9, fontSize: 12, color: 'CBD5E1' });
+            coverSlide.addText(`Ordem de Serviço (WO): ${sampleRow['Workorder'] || 'N/A'}`, { x: 1.2, y: 4.3, fontSize: 12, color: 'CBD5E1' });
+            coverSlide.addText(`Data do Relatório: ${new Date().toLocaleDateString('pt-BR')}`, { x: 1.2, y: 4.7, fontSize: 12, color: 'CBD5E1' });
+
+            coverSlide.addText(`Total de Danos Selecionados: ${selectedRows.length}`, { x: 7.0, y: 3.5, fontSize: 13, bold: true, color: '38BDF8' });
+            const maxSev = Math.max(...selectedRows.map(r => r['Severity'] || 1));
+            coverSlide.addText(`Severidade Máxima: SEV ${maxSev}`, { x: 7.0, y: 4.0, fontSize: 13, bold: true, color: maxSev >= 4 ? 'EF4444' : 'EAB308' });
+
+            // ==========================================
+            // SLIDES INDIVIDUAIS DOS DANOS
+            // ==========================================
             for (let index = 0; index < selectedRows.length; index++) {
                 const row = selectedRows[index];
                 const slide = pptx.addSlide();
                 
-                // Fondo Dark
                 slide.background = { color: '0F172A' };
 
                 // Banner Superior
                 slide.addShape(pptx.shapes.RECTANGLE, { x: 0, y: 0, w: '100%', h: 0.8, fill: { color: '1E293B' } });
                 
-                // Título e Subtítulo
                 slide.addText(`Relatório de Inspeção - ${row['Wind Park'] || 'Parque Eólico'}`, {
                     x: 0.5, y: 0.15, fontSize: 18, bold: true, color: '00F2FE'
                 });
@@ -489,7 +600,6 @@
                     base64Img = await getBase64ImageFromUrl(row['Image URL']);
                 }
 
-                // Inserir Imagem no Slide
                 if (base64Img) {
                     slide.addImage({
                         data: base64Img,
@@ -504,11 +614,10 @@
                     });
                 }
 
-                // Severidade Badge Color
                 const sevColors = { 1: '22C55E', 2: '06B6D4', 3: 'EAB308', 4: 'F97316', 5: 'EF4444' };
                 const sevColor = sevColors[row['Severity']] || '64748B';
 
-                // Painel da Direita (Detalhamento)
+                // Painel da Direita
                 slide.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
                     x: 6.3, y: 1.1, w: 6.5, h: 4.2, fill: { color: '1E293B' }, line: { color: '334155', width: 1 }
                 });
@@ -517,12 +626,10 @@
                     x: 6.6, y: 1.3, fontSize: 16, bold: true, color: 'FFFFFF'
                 });
 
-                // Tipo de Defeito
                 slide.addText(`Tipo de Defeito: ${row['Type'] || 'N/A'}`, {
                     x: 6.6, y: 1.8, fontSize: 13, bold: true, color: '38BDF8'
                 });
 
-                // Badge de Severidade
                 slide.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
                     x: 6.6, y: 2.2, w: 2.2, h: 0.4, fill: { color: sevColor }
                 });
@@ -530,12 +637,10 @@
                     x: 6.6, y: 2.2, w: 2.2, h: 0.4, align: 'center', fontSize: 11, bold: true, color: 'FFFFFF'
                 });
 
-                // Dimensões
                 slide.addText(`Localização na Pá: ${row['Location(m)'] || 0} m`, { x: 6.6, y: 2.8, fontSize: 11, color: 'CBD5E1' });
                 slide.addText(`Comprimento: ${row['Length(mm)'] || 0} mm`, { x: 6.6, y: 3.1, fontSize: 11, color: 'CBD5E1' });
                 slide.addText(`Largura: ${row['Width(mm)'] || 0} mm`, { x: 6.6, y: 3.4, fontSize: 11, color: 'CBD5E1' });
 
-                // Caixa de Recomendação
                 slide.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
                     x: 6.6, y: 3.8, w: 5.9, h: 1.2, fill: { color: '0F172A' }, line: { color: '475569', width: 1 }
                 });
@@ -552,5 +657,5 @@
             updatePptxButton();
         }
     </script>
-</body>
-</html>
+
+
